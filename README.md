@@ -5,8 +5,8 @@
 **Convert Word documents to clean Markdown — from the command line.**
 
 [![MIT License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![Shellcheck](https://github.com/aspectstudio/docx2md/actions/workflows/test.yml/badge.svg)](https://github.com/aspectstudio/docx2md/actions/workflows/test.yml)
-[![GitHub stars](https://img.shields.io/github/stars/aspectstudio/docx2md?style=social)](https://github.com/aspectstudio/docx2md/stargazers)
+[![Shellcheck](https://github.com/jschof1/docx2md/actions/workflows/test.yml/badge.svg)](https://github.com/jschof1/docx2md/actions/workflows/test.yml)
+[![GitHub stars](https://img.shields.io/github/stars/jschof1/docx2md?style=social)](https://github.com/jschof1/docx2md/stargazers)
 
 One dependency · Zero config · Works everywhere
 
@@ -32,13 +32,13 @@ That's it. No config files, no build step, no Node.js runtime. One script, one d
 ### One-liner (macOS, Linux, WSL)
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/aspectstudio/docx2md/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/jschof1/docx2md/main/install.sh | bash
 ```
 
 ### Or with git
 
 ```bash
-git clone https://github.com/aspectstudio/docx2md.git
+git clone https://github.com/jschof1/docx2md.git
 cd docx2md
 sudo make install
 ```
@@ -46,7 +46,7 @@ sudo make install
 ### Or just download it
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/aspectstudio/docx2md/main/docx2md -o /usr/local/bin/docx2md
+curl -fsSL https://raw.githubusercontent.com/jschof1/docx2md/main/docx2md -o /usr/local/bin/docx2md
 chmod +x /usr/local/bin/docx2md
 ```
 
@@ -137,7 +137,7 @@ There are plenty of docx-to-markdown tools. Here's why this one exists:
 ## 🧪 Development
 
 ```bash
-git clone https://github.com/aspectstudio/docx2md.git
+git clone https://github.com/jschof1/docx2md.git
 cd docx2md
 
 # Run tests
@@ -185,6 +185,6 @@ Keep it simple — this tool's value is its simplicity.
 
 If this saved you time, consider giving it a ⭐
 
-[⭐ Star on GitHub](https://github.com/aspectstudio/docx2md)
+[⭐ Star on GitHub](https://github.com/jschof1/docx2md)
 
 </div>

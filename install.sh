@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # docx2md installer — cross-platform one-liner
-# Usage: curl -fsSL https://raw.githubusercontent.com/aspectstudio/docx2md/main/install.sh | bash
+# Usage: curl -fsSL https://raw.githubusercontent.com/jschof1/docx2md/main/install.sh | bash
 
 set -euo pipefail
 
@@ -11,7 +11,7 @@ RED="$(tput setaf 1 2>/dev/null || echo '')"
 RESET="$(tput sgr0 2>/dev/null || echo '')"
 
 DEST="${DEST:-/usr/local/bin}"
-REPO="aspectstudio/docx2md"
+REPO="jschof1/docx2md"
 BRANCH="main"
 BIN_NAME="docx2md"
 

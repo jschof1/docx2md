@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # docx2md — Convert Word documents to clean Markdown
-# https://github.com/aspectstudio/docx2md
+# https://github.com/jschof1/docx2md
 #
 # Dependencies: pandoc
 # Optional: texlive (for math), catdoc (for legacy .doc)
@@ -54,7 +54,7 @@ ${BOLD}EXAMPLES${RESET}
     find . -name '*.docx' | xargs ${PROGRAM}       # convert all docs
 
 ${BOLD}INSTALL${RESET}
-    curl -fsSL https://raw.githubusercontent.com/aspectstudio/docx2md/main/install.sh | bash
+    curl -fsSL https://raw.githubusercontent.com/jschof1/docx2md/main/install.sh | bash
 
 EOF
 }
