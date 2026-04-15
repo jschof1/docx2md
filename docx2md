@@ -1,0 +1,213 @@
+#!/usr/bin/env bash
+# docx2md — Convert Word documents to clean Markdown
+# https://github.com/aspectstudio/docx2md
+#
+# Dependencies: pandoc
+# Optional: texlive (for math), catdoc (for legacy .doc)
+
+set -euo pipefail
+
+readonly VERSION="1.0.0"
+readonly PROGRAM="$(basename "$0")"
+
+# ── Colors ────────────────────────────────────────────────────────────────────
+if [[ -t 1 ]] && command -v tput &>/dev/null && [[ $(tput colors 2>/dev/null || echo 0) -ge 8 ]]; then
+    RED="$(tput setaf 1)"   GREEN="$(tput setaf 2)"  YELLOW="$(tput setaf 3)"
+    BOLD="$(tput bold)"     RESET="$(tput sgr0)"
+else
+    RED="" GREEN="" YELLOW="" BOLD="" RESET=""
+fi
+
+# ── Defaults ──────────────────────────────────────────────────────────────────
+FLAG_EXTRACT_IMAGES=false
+FLAG_STDOUT=false
+FLAG_QUIET=false
+FLAG_WRAP=none
+IMAGE_DIR=""
+OUTPUT_FILE=""
+INPUT_FILES=()
+
+# ── Help ──────────────────────────────────────────────────────────────────────
+usage() {
+    cat <<EOF
+${BOLD}docx2md${RESET} ${VERSION} — Convert Word documents to clean Markdown
+
+${BOLD}USAGE${RESET}
+    ${PROGRAM} [OPTIONS] <input.docx...>
+    ${PROGRAM} <input.docx> [output.md]
+
+${BOLD}OPTIONS${RESET}
+    -i, --images [DIR]    Extract images into DIR (default: images/)
+    -s, --stdout          Write Markdown to stdout instead of a file
+    -q, --quiet           Suppress all output except errors
+    -w, --wrap MODE       Line wrapping: none (default), auto, or preserve
+    -h, --help            Show this help message
+    -V, --version         Show version number
+
+${BOLD}EXAMPLES${RESET}
+    ${PROGRAM} report.docx                          # → report.md
+    ${PROGRAM} report.docx notes.md                 # custom output name
+    ${PROGRAM} -i assets report.docx                # extract images to assets/
+    ${PROGRAM} -s report.docx | head -20            # preview in terminal
+    ${PROGRAM} chapter*.docx                        # batch convert
+    ${PROGRAM} -iq chapter*.docx                    # batch with images, quiet
+    find . -name '*.docx' | xargs ${PROGRAM}       # convert all docs
+
+${BOLD}INSTALL${RESET}
+    curl -fsSL https://raw.githubusercontent.com/aspectstudio/docx2md/main/install.sh | bash
+
+EOF
+}
+
+version() {
+    echo "docx2md ${VERSION}"
+}
+
+# ── Argument parsing ──────────────────────────────────────────────────────────
+parse_args() {
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            -i|--images)
+                FLAG_EXTRACT_IMAGES=true
+                if [[ $# -gt 1 && ! "$2" =~ ^- ]]; then
+                    IMAGE_DIR="$2"; shift
+                fi
+                ;;
+            -s|--stdout)   FLAG_STDOUT=true ;;
+            -q|--quiet)    FLAG_QUIET=true ;;
+            -w|--wrap)
+                if [[ $# -gt 1 ]]; then
+                    FLAG_WRAP="$2"; shift
+                else
+                    die "--wrap requires a value (none, auto, or preserve)"
+                fi
+                ;;
+            -h|--help)     usage; exit 0 ;;
+            -V|--version)  version; exit 0 ;;
+            -*)            die "Unknown option: $1\nTry '${PROGRAM} --help' for usage." ;;
+            *)             INPUT_FILES+=("$1") ;;
+        esac
+        shift
+    done
+
+    # If exactly 2 files given and second isn't .docx, treat as output
+    if [[ ${#INPUT_FILES[@]} -eq 2 && "${INPUT_FILES[1]}" != *.docx ]]; then
+        OUTPUT_FILE="${INPUT_FILES[1]}"
+        INPUT_FILES=("${INPUT_FILES[0]}")
+    fi
+
+    if [[ ${#INPUT_FILES[@]} -eq 0 ]]; then
+        usage; exit 1
+    fi
+}
+
+# ── Helpers ───────────────────────────────────────────────────────────────────
+die() {
+    echo "${RED}Error:${RESET} $*" >&2
+    exit 1
+}
+
+info() {
+    [[ "$FLAG_QUIET" == true ]] && return
+    echo "${GREEN}✓${RESET} $*"
+}
+
+warn() {
+    [[ "$FLAG_QUIET" == true ]] && return
+    echo "${YELLOW}⚠${RESET} $*" >&2
+}
+
+check_deps() {
+    command -v pandoc &>/dev/null || die "pandoc is required but not installed.\n  Install it: https://pandoc.org/installing.html"
+}
+
+# ── Core conversion ───────────────────────────────────────────────────────────
+convert() {
+    local input="$1"
+    local output="$2"
+    local img_flag=""
+
+    # Build pandoc options
+    local pandoc_opts=(
+        -f docx
+        -t markdown
+        --wrap="$FLAG_WRAP"
+    )
+
+    # Image extraction
+    if [[ "$FLAG_EXTRACT_IMAGES" == true ]]; then
+        local img_dir="${IMAGE_DIR:-images}"
+        # If output is a file, put images next to it
+        if [[ -n "$output" && "$output" != "/dev/stdout" ]]; then
+            local base_dir
+            base_dir="$(dirname "$output")"
+            img_dir="${base_dir}/${img_dir}"
+        fi
+        mkdir -p "$img_dir"
+        pandoc_opts+=(--extract-media="$img_dir")
+        # pandoc extracts to extract-media/... — move files up if needed
+    fi
+
+    if [[ "$FLAG_STDOUT" == true || "$output" == "/dev/stdout" ]]; then
+        pandoc "${pandoc_opts[@]}" "$input" 2>/dev/null
+    else
+        pandoc "${pandoc_opts[@]}" "$input" -o "$output" 2>/dev/null
+    fi
+
+    return $?
+}
+
+process_file() {
+    local input="$1"
+
+    [[ ! -f "$input" ]] && { warn "File not found, skipping: $input"; return 1; }
+
+    local output
+    if [[ -n "$OUTPUT_FILE" ]]; then
+        output="$OUTPUT_FILE"
+    elif [[ "$FLAG_STDOUT" == true ]]; then
+        output="/dev/stdout"
+    else
+        output="${input%.docx}.md"
+        # Handle files without .docx extension gracefully
+        [[ "$output" == "$input" ]] && output="${input}.md"
+    fi
+
+    if convert "$input" "$output"; then
+        if [[ "$FLAG_STDOUT" != true ]]; then
+            info "$(basename "$input") → $(basename "$output")"
+        fi
+    else
+        warn "Failed to convert: $(basename "$input")"
+        return 1
+    fi
+}
+
+# ── Main ──────────────────────────────────────────────────────────────────────
+main() {
+    parse_args "$@"
+    check_deps
+
+    local success=0
+    local failed=0
+
+    for file in "${INPUT_FILES[@]}"; do
+        if process_file "$file"; then
+            ((success++)) || true
+        else
+            ((failed++)) || true
+        fi
+    done
+
+    # Summary for batch runs
+    if [[ ${#INPUT_FILES[@]} -gt 1 && "$FLAG_QUIET" != true ]]; then
+        echo ""
+        echo "${BOLD}Done:${RESET} ${GREEN}${success} converted${RESET}, ${RED}${failed} failed${RESET}"
+    fi
+
+    # Exit with error if anything failed
+    [[ $failed -gt 0 ]] && exit 1
+    exit 0
+}
+
+main "$@"
