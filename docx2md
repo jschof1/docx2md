@@ -8,7 +8,8 @@
 set -euo pipefail
 
 readonly VERSION="1.0.0"
-readonly PROGRAM="$(basename "$0")"
+PROGRAM="$(basename "$0")"
+readonly PROGRAM
 
 # ── Colors ────────────────────────────────────────────────────────────────────
 if [[ -t 1 ]] && command -v tput &>/dev/null && [[ $(tput colors 2>/dev/null || echo 0) -ge 8 ]]; then
@@ -125,7 +126,7 @@ check_deps() {
 convert() {
     local input="$1"
     local output="$2"
-    local img_flag=""
+
 
     # Build pandoc options
     local pandoc_opts=(
